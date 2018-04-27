@@ -121,17 +121,17 @@ class NotifAnalyzer():
 		self.mastodon.status_post(text, in_reply_to_id=self.status['id'], visibility=self.status['visibility'])
 	def _reply_move(self):
 		if not self.target: return
-		acct,url = self.target
-		house = self.data.get_house(url)
+		house = self.data.get_house(self.target['url'])
 		if house == None:
-			text = "{} It doesn't look like @{} has a house around here.".format(self.name, acct)
+			text = "{} It doesn't look like @{} has a house around here.".format(self.name, self.target['name'])
 		if house != None:
-			text = "{} You've requested to move in with @{}.\n\n".format(self.name, acct)
+			text = "{} You've requested to move in with @{}.\n\n".format(self.name, self.target['name'])
 			text += "Before you can move in, someone from the house must answer YES to this toot.\n"
 			text += "Current residents:\n"
-			residents = data.get_residents(house[0],house[1])
+			residents = self.data.get_residents(house[0],house[1])
 			for (resident,url) in residents:
 				text += resident+"\n"
+		self.mastodon.status_post(text, in_reply_to_id=self.status['id'], visibility=self.status['visibility'])
 
 	def _reply_yes(self):
 		parent = self._get_parent()
