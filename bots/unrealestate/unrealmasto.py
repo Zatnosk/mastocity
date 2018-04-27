@@ -44,7 +44,7 @@ class Cache():
 	@classmethod
 	def set(cls, status):
 		self = cls._get_instance()
-		self.cache[status['id']] = status,time.time()
+		self.cache[status.status['id']] = status,time.time()
 
 	@classmethod
 	def get(cls, id):
@@ -122,7 +122,7 @@ class NotifAnalyzer():
 	def _reply_move(self):
 		if not self.target: return
 		acct,url = self.target
-		house = data.get_house(url)
+		house = self.data.get_house(url)
 		if house == None:
 			text = "{} It doesn't look like @{} has a house around here.".format(self.name, acct)
 		if house != None:
@@ -206,9 +206,9 @@ class NotifAnalyzer():
 	def _fetch_context(self):
 		context = mastodon.status_context(self.status['id'])
 		for status in context['ancestors']:
-			NotifAnalyzer(status)
+			NotifAnalyzer(status, self.mastodon, self.data)
 		for cache in context['descendants']:
-			NotifAnalyzer(status)
+			NotifAnalyzer(status, self.mastodon, self.data)
 
 	def _send_reply(self, text):
 		self.mastodon.status_post(text, in_reply_to_id=self.status['id'], visibility=self.status['visibility'])
@@ -239,7 +239,7 @@ def catch_up(mastodon, data, max_id = None):
 	else:
 		print("Handling {} queued messages".format(len(waiting)))
 	for notif in waiting:
-		status = NotifAnalyzer(notif['status'],mastodon)
+		status = NotifAnalyzer(notif['status'],mastodon,data)
 		status.analyse()
 		status.reply()
 
