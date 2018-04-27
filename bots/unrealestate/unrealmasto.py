@@ -206,9 +206,9 @@ class NotifAnalyzer():
 	def _fetch_context(self):
 		context = mastodon.status_context(self.status['id'])
 		for status in context['ancestors']:
-			Analyzer(status)
+			NotifAnalyzer(status)
 		for cache in context['descendants']:
-			Analyzer(status)
+			NotifAnalyzer(status)
 
 	def _send_reply(self, text):
 		self.mastodon.status_post(text, in_reply_to_id=self.status['id'], visibility=self.status['visibility'])
@@ -239,7 +239,7 @@ def catch_up(mastodon, data, max_id = None):
 	else:
 		print("Handling {} queued messages".format(len(waiting)))
 	for notif in waiting:
-		status = Analyzer(notif['status'],mastodon)
+		status = NotifAnalyzer(notif['status'],mastodon)
 		status.analyse()
 		status.reply()
 
