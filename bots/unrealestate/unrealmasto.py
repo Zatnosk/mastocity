@@ -118,7 +118,8 @@ class NotifAnalyzer():
 			})
 			text = "{} Your new house is here:\n".format(self.name)
 		text += "http://zatnosk.dk/playground/mastocity/?x={}&y={}".format(x,y)
-		self.mastodon.status_post(text, in_reply_to_id=self.status['id'], visibility=self.status['visibility'])
+		self._send_reply(text)
+	
 	def _reply_move(self):
 		if not self.target: return
 		house = self.data.get_house(self.target['url'])
@@ -131,8 +132,8 @@ class NotifAnalyzer():
 			residents = self.data.get_residents(house[0],house[1])
 			for (resident,url) in residents:
 				text += resident+"\n"
-		self.mastodon.status_post(text, in_reply_to_id=self.status['id'], visibility=self.status['visibility'])
-
+		self._send_reply(text)
+		
 	def _reply_yes(self):
 		parent = self._get_parent()
 		if not parent \
@@ -151,9 +152,9 @@ class NotifAnalyzer():
 		if not mover_mentioned or not target_mentioned: return
 		house = self.data.get_house(target.url)
 		if self.data.get_house(self.url):
-			data.move(mover, house[0], house[1])
+			self.data.move(mover, house[0], house[1])
 		else:
-			data.build_house({'x':house[0],'y':house[1],'owner':self.name,'url':self.url})
+			self.data.build_house({'x':house[0],'y':house[1],'owner':self.name,'url':self.url})
 		text += "\nYou now share a house!\n\n"
 		text += "http://zatnosk.dk/playground/mastocity/?x={}&y={}".format(house[0],house[1])
 		self._send_reply(text)
