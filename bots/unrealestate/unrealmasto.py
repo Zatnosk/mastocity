@@ -44,14 +44,15 @@ class Cache():
 	@classmethod
 	def set(cls, status):
 		self = cls._get_instance()
-		self.cache[status.status['id']] = status,time.time()
+		self.cache[str(status.status['id'])] = status,time.time()
 
 	@classmethod
 	def get(cls, id):
 		self = cls._get_instance()
-		if self.cache[id] and self.cache[id][1] > time.time() - 3600:
-			#only return caches values less than an hour old
-			return self.cache[id][0]
+		status, t = self.cache.get(str(id),(None,0))
+		if status and t > time.time() - 3600:
+			#only return cached values less than an hour old
+			return status
 		else:
 			return None
 
@@ -138,21 +139,21 @@ class NotifAnalyzer():
 		parent = self._get_parent()
 		if not parent \
 			or not parent.is_mine() \
-			or not parent['in_reply_to_id']: return
+			or not parent.status['in_reply_to_id']: return
 		grandparent = parent._get_parent()
 		if not grandparent: return
 		grandparent.analyse()
-		if grandparent.type != move: return
+		if grandparent.type != 'move': return
 		target = grandparent.target
 		text = "Congratulations"
 		for mention in parent.status['mentions']:
 			if grandparent.url == mention['url']: mover_mentioned = True
-			if target.url == mention['url']: target_mentioned = True
+			if target['url'] == mention['url']: target_mentioned = True
 			text += ", @"+mention['acct']
 		if not mover_mentioned or not target_mentioned: return
-		house = self.data.get_house(target.url)
+		house = self.data.get_house(target['url'])
 		if self.data.get_house(self.url):
-			self.data.move(mover, house[0], house[1])
+			self.data.move(grandparent.url, house[0], house[1])
 		else:
 			self.data.build_house({'x':house[0],'y':house[1],'owner':self.name,'url':self.url})
 		text += "\nYou now share a house!\n\n"
@@ -199,13 +200,13 @@ class NotifAnalyzer():
 	def _get_parent(self):
 		if not self.parent and self.status['in_reply_to_id']:
 			self.parent = Cache.get(self.status['in_reply_to_id'])
-			if not parent:
+			if not self.parent:
 				self._fetch_context()
 				self.parent = Cache.get(self.status['in_reply_to_id'])
 		return self.parent
 
 	def _fetch_context(self):
-		context = mastodon.status_context(self.status['id'])
+		context = self.mastodon.status_context(self.status['id'])
 		for status in context['ancestors']:
 			NotifAnalyzer(status, self.mastodon, self.data)
 		for cache in context['descendants']:
