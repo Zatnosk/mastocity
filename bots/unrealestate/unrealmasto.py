@@ -7,16 +7,6 @@ state = {
 	'data': None
 }
 
-class StatusListener(StreamListener):
-	def __init__(self, mastodon, data):
-		self.mastodon = mastodon
-		self.data = data
-		state['mastodon'] = mastodon
-		state['data'] = data
-
-	def on_update(self, status):
-		self.data.post_status(status)
-
 class NotifListener(StreamListener):
 	def __init__(self, mastodon, data):
 		self.mastodon = mastodon
@@ -27,7 +17,9 @@ class NotifListener(StreamListener):
 	def on_notification(self, notification):
 		if notification['type'] != 'mention':
 			return
-		NotifAnalyzer(notification['status'], self.mastodon, self.data)
+		notif = NotifAnalyzer(notification['status'], self.mastodon, self.data)
+		notif.analyse()
+		notif.reply()
 
 class Cache():
 	instance = None
@@ -110,8 +102,8 @@ class NotifAnalyzer():
 			x,y,_,_ = house
 			text = "{} You already have a house here:\n".format(self.name)
 		else:
-			x,y = data.find_random_spot()
-			data.build_house({
+			x,y = self.data.find_random_spot()
+			self.data.build_house({
 				'x':x,
 				'y':y,
 				'owner':self.name,
